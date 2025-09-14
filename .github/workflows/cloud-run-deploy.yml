@@ -29,7 +29,8 @@ jobs:
         run: |
           cd backend
           gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-backend
-
+          env:
+            CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE: ${{ secrets.GCP_SA_KEY }}
       - name: Deploy Backend to Cloud Run
         run: |
           gcloud run deploy socialmedia-backend \
