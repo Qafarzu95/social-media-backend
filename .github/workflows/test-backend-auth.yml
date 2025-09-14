@@ -1,0 +1,26 @@
+name: Test GCP Auth - Backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-backend-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Authenticate to GCP via Workload Identity
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_PROVIDER_BACKEND }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Test gcloud access
+        run: |
+          echo "Listing GCP projects to test auth..."
+          gcloud projects list
