@@ -1,30 +1,26 @@
-name: Deploy Backend to Cloud Run
+name: Deploy Backend
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
-    permissions:            # Job seviyesinde de ekliyoruz
-      id-token: write
-      contents: read
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Authenticate to GCP via Workload Identity
-        uses: google-github-actions/auth@v1.6.0  # v1 yerine güncel sürüm
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: "projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
-          service_account: "github-actions-deploy@pure-highlander-471707-t2.iam.gserviceaccount.com"
+          workload_identity_provider: ${{ secrets.GCP_PROVIDER_BACKEND }}
+          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
 
-      - name: Build & Push Docker image
+      - name: Deploy Backend to Cloud Run
         run: |
-          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
+          gcloud run deploy social-media-backend \
+            --image gcr.io/${{ secrets.GCP_PROJECT }}/backend-image:latest \
+            --region europe-west1 \
+            --platform managed
