@@ -1,0 +1,42 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: pure-highlander-471707-t2
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Authenticate Docker to GCR
+        run: |
+          gcloud auth configure-docker
+
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/pure-highlander-471707-t2/socialmedia-backend .
+
+      - name: Push Docker image
+        run: |
+          docker push gcr.io/pure-highlander-471707-t2/socialmedia-backend
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy socialmedia-backend \
+            --image gcr.io/pure-highlander-471707-t2/socialmedia-backend \
+            --platform managed \
+            --region asia-east1 \
+            --allow-unauthenticated \
+            --add-cloudsql-instances pure-highlander-471707-t2:asia-east1:socialmedia-instance \
+            --set-env-vars DATABASE_HOST=/cloudsql/pure-highlander-471707-t2:asia-east1:socialmedia-instance,DATABASE_USER=postgres,DATABASE_PASSWORD=654321Aa!,DATABASE_NAME=socialmedia
