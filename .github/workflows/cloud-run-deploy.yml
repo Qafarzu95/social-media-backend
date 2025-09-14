@@ -1,5 +1,9 @@
 name: Deploy Backend to Cloud Run
 
+permissions:
+  id-token: write   # OIDC için gerekli
+  contents: read    # Repo checkout için gerekli
+
 on:
   push:
     branches:
@@ -7,37 +11,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Test Backend GCP auth
-  test-backend-auth:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout backend code
-        uses: actions/checkout@v3
-        with:
-          path: backend
-
-      - name: Authenticate to GCP (Backend) via Workload Identity
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ secrets.GCP_PROVIDER_BACKEND }}
-          service_account: ${{ secrets.GCP_SA_EMAIL }}
-
-      - name: Test gcloud access (Backend)
-        run: |
-          echo "Listing GCP projects to test auth..."
-          gcloud projects list
-
-  # Deploy Backend
   deploy-backend:
     runs-on: ubuntu-latest
-    needs: test-backend-auth
     steps:
       - name: Checkout backend code
         uses: actions/checkout@v3
         with:
           path: backend
 
-      - name: Authenticate to GCP (Backend) via Workload Identity
+      - name: Authenticate to GCP via Workload Identity
         uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ secrets.GCP_PROVIDER_BACKEND }}
@@ -55,5 +37,5 @@ jobs:
             --platform managed \
             --region asia-east1 \
             --allow-unauthenticated \
-            --add-cloudsql-instances ${{ secrets.CLOUDSQL_INSTANCE }} \
-            --set-env-vars DATABASE_HOST=/cloudsql/${{ secrets.CLOUDSQL_INSTANCE }},DATABASE_USER=${{ secrets.DB_USER }},DATABASE_PASSWORD=${{ secrets.DB_PASSWORD }},DATABASE_NAME=${{ secrets.DB_NAME }}
+            --add-cloudsql-instances ${{ secrets.GCP_PROJECT }}:asia-east1:socialmedia-instance \
+            --set-env-vars DATABASE_HOST=/cloudsql/${{ secrets.GCP_PROJECT }}:asia-east1:socialmedia-instance,DATABASE_USER=postgres,DATABASE_PASSWORD=654321Aa!,DATABASE_NAME=socialmedia
