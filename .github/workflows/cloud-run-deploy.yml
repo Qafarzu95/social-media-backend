@@ -4,32 +4,24 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout backend code
         uses: actions/checkout@v3
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate to GCP via Workload Identity
+        uses: google-github-actions/auth@v1
         with:
-          project_id: pure-highlander-471707-t2
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
+          workload_identity_provider: "projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
+          service_account: "github-actions-deploy@pure-highlander-471707-t2.iam.gserviceaccount.com"
 
-      - name: Authenticate Docker to GCR
+      - name: Build & Push Docker image with Cloud Build
         run: |
-          gcloud auth configure-docker
-
-      - name: Build Docker image
-        run: |
-          docker build -t gcr.io/pure-highlander-471707-t2/socialmedia-backend .
-
-      - name: Push Docker image
-        run: |
-          docker push gcr.io/pure-highlander-471707-t2/socialmedia-backend
+          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
 
       - name: Deploy to Cloud Run
         run: |
