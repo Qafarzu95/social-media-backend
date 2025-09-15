@@ -30,6 +30,8 @@ jobs:
         with:
           project_id: pure-highlander-471707-t2
           install_kubectl: true
+          install_gke_gcloud_auth_plugin: true
+
 
       - name: Build & Push Backend Docker
         run: |
