@@ -39,7 +39,9 @@ jobs:
       - name: Build & Push Backend Docker
         run: |
           cd backend
-          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
+          IMAGE_TAG=gcr.io/pure-highlander-471707-t2/socialmedia-backend:${GITHUB_SHA}
+          echo "Building Docker image with tag $IMAGE_TAG"
+          gcloud builds submit --tag $IMAGE_TAG
 
       - name: Get GKE credentials
         run: |

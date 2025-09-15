@@ -1,32 +1,63 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: socialmedia-backend-x
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: socialmedia-backend
-  template:
-    metadata:
-      labels:
-        app: socialmedia-backend
-    spec:
-      containers:
-      - name: backend
-        image: gcr.io/pure-highlander-471707-t2/socialmedia-backend:latest
-        ports:
-        - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: socialmedia-backend-service
-spec:
-  type: ClusterIP
-  selector:
-    app: socialmedia-backend
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
+name: Deploy Backend to GKE
+
+on:
+  push:
+    branches:
+      - dev   # sadece dev branch tetiklenecek
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout backend code
+      - name: Checkout backend code
+        uses: actions/checkout@v3
+        with:
+          path: backend
+
+      # 2️⃣ Authenticate to GCP
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-backend-provider
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      # 3️⃣ gcloud & kubectl kurulumu
+      - name: Set up gcloud & kubectl
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: pure-highlander-471707-t2
+          install_kubectl: true
+          export_default_credentials: true
+
+      # 4️⃣ GKE Auth Plugin
+      - name: Install GKE Auth Plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+
+      # 5️⃣ Docker image build & push
+      - name: Build & Push Backend Docker
+        run: |
+          cd backend
+          IMAGE_TAG=gcr.io/pure-highlander-471707-t2/socialmedia-backend:${GITHUB_SHA}
+          echo "Building Docker image with tag $IMAGE_TAG"
+          gcloud builds submit --tag $IMAGE_TAG
+
+      # 6️⃣ GKE credentials al
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
+
+      # 7️⃣ Deploy Backend
+      - name: Deploy Backend
+        run: |
+          IMAGE_TAG=gcr.io/pure-highlander-471707-t2/socialmedia-backend:${GITHUB_SHA}
+          # 1️⃣ Deployment & Service YAML apply
+          kubectl apply -f backend/k8s/backend-deployment.yaml
+          # 2️⃣ Sadece Deployment container image'ı commit-SHA ile update
+          kubectl set image deployment/socialmedia-backend-x backend=$IMAGE_TAG
