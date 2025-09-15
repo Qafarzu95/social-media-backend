@@ -60,7 +60,7 @@ jobs:
           # Deployment & Service YAML apply
           kubectl apply -f backend/k8s/backend-deployment.yaml
           # Sadece Deployment container image'ı commit-SHA ile update
-          kubectl set image deployment/socialmedia-backend-x backend=$IMAGE_TAG
+          kubectl set image deployment/socialmedia-backend backend=$IMAGE_TAG
           # 60 saniye bekle ve rollout kontrol et
-          kubectl rollout status deployment/socialmedia-backend-x --timeout=60s || \
-          kubectl rollout undo deployment/socialmedia-backend-x
+          kubectl rollout status deployment/socialmedia-backend --timeout=60s || \
+          kubectl rollout undo deployment/socialmedia-backend

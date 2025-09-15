@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: socialmedia-backend-x
+  name: socialmedia-backend
 spec:
   replicas: 2
   selector:
