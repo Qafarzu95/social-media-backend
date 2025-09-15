@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    cert-manager.io/cluster-issuer: "letsencrypt-dns"
+spec:
+  rules:
+  - host: api.mysocialmedia.ddns.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: socialmedia-backend-service
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - api.mysocialmedia.ddns.net
+    secretName: backend-tls
