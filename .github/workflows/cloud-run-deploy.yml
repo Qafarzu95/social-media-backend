@@ -54,4 +54,4 @@ jobs:
       # Deploy Backend
       - name: Deploy Backend
         run: |
-          kubectl apply -f backend/kubernetes/backend-deployment.yaml
+          kubectl apply -f backend/k8s/backend-deployment.yaml
