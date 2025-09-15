@@ -14,34 +14,44 @@ jobs:
   deploy-backend:
     runs-on: ubuntu-latest
     steps:
+      # Checkout backend code
       - name: Checkout backend code
         uses: actions/checkout@v3
         with:
           path: backend
 
+      # Authenticate to GCP
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-backend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
+      # gcloud & kubectl kurulumu
       - name: Set up gcloud & kubectl
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: pure-highlander-471707-t2
           install_kubectl: true
-          install_gke_gcloud_auth_plugin: true
+          export_default_credentials: true
 
+      # GKE Auth Plugin kurulumu
+      - name: Install GKE Auth Plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
 
+      # Docker image build ve push
       - name: Build & Push Backend Docker
         run: |
           cd backend
           gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
 
+      # GKE credentials al
       - name: Get GKE credentials
         run: |
           gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
 
+      # Deploy Backend
       - name: Deploy Backend
         run: |
-          kubectl apply -f backend/k8s/backend-deployment.yaml
+          kubectl apply -f backend/kubernetes/backend-deployment.yaml
