@@ -1,4 +1,4 @@
-name: Deploy Backend to Cloud Run
+name: Deploy Backend to GKE
 
 on:
   push:
@@ -19,22 +19,27 @@ jobs:
         with:
           path: backend
 
-      - name: Authenticate to GCP via Workload Identity
+      - name: Authenticate to GCP
         uses: google-github-actions/auth@v1
         with:
-          # Mevcut pool ve provider ile değiştirildi
           workload_identity_provider: projects/212643517584/locations/global/workloadIdentityPools/github-actions-pool-v2/providers/github-backend-provider
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-      - name: Build & Push Backend Docker image
+      - name: Set up gcloud & kubectl
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: pure-highlander-471707-t2
+          install_kubectl: true
+
+      - name: Build & Push Backend Docker
         run: |
           cd backend
-          gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-backend
+          gcloud builds submit --tag gcr.io/pure-highlander-471707-t2/socialmedia-backend
 
-      - name: Deploy Backend to Cloud Run
+      - name: Get GKE credentials
         run: |
-          gcloud run deploy socialmedia-backend \
-            --image gcr.io/${{ secrets.GCP_PROJECT }}/socialmedia-backend \
-            --platform managed \
-            --region asia-east1 \
-            --allow-unauthenticated
+          gcloud container clusters get-credentials socialmedia-cluster --zone asia-east1-a
+
+      - name: Deploy Backend
+        run: |
+          kubectl apply -f k8s/backend-deployment.yaml
