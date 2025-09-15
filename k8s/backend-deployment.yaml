@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: socialmedia-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: socialmedia-backend
+  template:
+    metadata:
+      labels:
+        app: socialmedia-backend
+    spec:
+      containers:
+      - name: backend
+        image: gcr.io/pure-highlander-471707-t2/socialmedia-backend:latest
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: socialmedia-backend-service
+spec:
+  type: ClusterIP
+  selector:
+    app: socialmedia-backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
